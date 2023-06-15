@@ -1,6 +1,6 @@
 # Reproducibility Archive
 
-Reproducibility Archive for Paper "Testing for Group Differences in Multi-level Vector Autoregressive Models"; Preprint XXXX
+Reproducibility Archive for Paper "Testing for Group Differences in Multi-level Vector Autoregressive Models"; Preprint https://psyarxiv.com/dhp8s/
 
 
 ### Main Simulation Study
