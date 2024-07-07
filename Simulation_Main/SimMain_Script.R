@@ -1,4 +1,4 @@
-# jonashaslbeck@protonmail.com; June 1st, 2023
+# jonashaslbeck@protonmail.com; June 24th, 2024
 
 # --------------------------------------------------------------
 # ---------- Get Iteration Number ------------------------------
@@ -19,8 +19,13 @@ iter <- as.numeric(iter)
 
 # Source
 source("aux_Sim.R")
+# source("Simulation_Main_New/aux_Sim.R")
 
 # Estimation
+
+library(devtools)
+# install_github("jmbh/mnet")
+
 library(mnet)
 library(corpcor)
 library(mlVAR)
@@ -29,6 +34,7 @@ library(mlVAR)
 library(foreach)
 library(parallel)
 library(doParallel)
+
 
 # ----------------------------------------------------------------------
 # ----- Simulating one Iteration ---------------------------------------
@@ -41,8 +47,8 @@ library(doParallel)
 l_results_iter <- list("design" = NULL,
                        "datagen" = list(),
                        "outcomes" = list(),
-                       "outcomes_para" = list())
-
+                       "outcomes_para" = list(),
+                       "phi_ests"=list())
 
 # -----------------------
 # ----- Define Design ---
@@ -50,7 +56,7 @@ l_results_iter <- list("design" = NULL,
 
 v_tot_sub <- c(50, 100, 200) # identifiability issue solved!
 v_balance <- c(0.5, 0.2) # percentage in first group
-v_Delta <- c(0.05, 0.15, 0.25)
+v_Delta <- c(0.04, 0.08, 0.12)
 
 # Create design grid
 design_grid <- expand.grid(v_tot_sub, v_balance, v_Delta)
@@ -72,7 +78,7 @@ for(i in 1:n_design) {
 
   timer_data_i <- proc.time()[3]
 
-  data_gen <- SimData(p = 8, # Fixed, otherwise infeasible
+  data_gen <- SimData(p = 8, # Fixed, otherwise unfeasible
                       Nsubj = design_grid$Nsubj[i],
                       prop = design_grid$Balance[i],
                       Delta = design_grid$Delta[i],
@@ -81,7 +87,6 @@ for(i in 1:n_design) {
                       var_burnin = 50,
                       pbar = FALSE)
 
-  # saveRDS(data_gen, "data_design4.RDS")
 
   # print total time of nodes
   print(paste0("Timing DataGen Iter: ", i, ":"))
@@ -95,6 +100,7 @@ for(i in 1:n_design) {
               rep(2, nrow(data_gen$data[[2]])))
 
   data_cmd <- cbind(data_cmd, groups)
+
 
   # ------------------------------------
   # ----- Testing: Permutation ---------
@@ -126,6 +132,8 @@ for(i in 1:n_design) {
   # ----- Testing: Parametric ----------
   # ------------------------------------
 
+  timer_est_i <- proc.time()[3]
+
   out_mlVAR_GC_para <- mlVAR_GC(data = data_cmd,
                                 vars = paste0("V", 1:8), # 8 variables!
                                 idvar = "id",
@@ -135,11 +143,56 @@ for(i in 1:n_design) {
                                 saveModels = FALSE,
                                 contemporaneous = "orthogonal",
                                 temporal = "orthogonal",
+                                saveEmpModels = TRUE,
                                 pbar = FALSE)
+  # Save fixed Phi estimates
+  phi_ests <- array(NA, dim=c(8,8,2))
+  phi_ests[, , 1] <-  out_mlVAR_GC_para$EmpModels[[1]]$results$Beta$mean[, , 1]
+  phi_ests[, , 2] <-  out_mlVAR_GC_para$EmpModels[[2]]$results$Beta$mean[, , 1]
+  l_results_iter$phi_ests[[i]] <- phi_ests
 
+  # Save results
+  out_mlVAR_GC_para$EmpModels <- NULL # Delete to save space
   l_results_iter$outcomes_para[[i]] <- out_mlVAR_GC_para
 
+  # print total time of nodes
+  print(paste0("Timing Para Test Iter: ", i, ":"))
+  v_timer_i[i] <- proc.time()[3] - timer_est_i
+  print(v_timer_i[i])
+
+
+  # # -------------------------------------------------------
+  # # ----- Testing: Parametric [using true means] ----------
+  # # -------------------------------------------------------
+  #
+  # timer_est_i <- proc.time()[3]
+  #
+  # out_mlVAR_GC_paraTM <- mlVAR_GC(data = data_cmd,
+  #                                 vars = paste0("V", 1:8), # 8 variables!
+  #                                 idvar = "id",
+  #                                 groups = "groups",
+  #                                 test = "parametric",
+  #                                 trueMeans = truemean_cmb,
+  #                                 verbose = FALSE,
+  #                                 saveModels = FALSE,
+  #                                 contemporaneous = "orthogonal",
+  #                                 temporal = "orthogonal",
+  #                                 saveEmpModels = TRUE,
+  #                                 pbar = FALSE)
+  #
+  # # Save results
+  # out_mlVAR_GC_paraTM$EmpModels <- NULL # Delete to save space
+  # l_results_iter$outcomes_paraTM[[i]] <- out_mlVAR_GC_paraTM
+  #
+  # # print total time of nodes
+  # print(paste0("Timing Para Test TM Iter: ", i, ":"))
+  # v_timer_i[i] <- proc.time()[3] - timer_est_i
+  # print(v_timer_i[i])
+
+
+  # ----- Progress (for pot. degbugging) -----
   print(i)
+
 
 } # end loop: through design
 
@@ -158,7 +211,7 @@ proc.time()[3] - timer_total
 # ----------------------------------------------------------------------
 
 # Save
-saveRDS(l_results_iter, file = paste0("mlVARGD_Sim2_Iter", iter,".RDS"))
+saveRDS(l_results_iter, file = paste0("mlVARGD_Sim13_Iter", iter,".RDS"))
 
 
 

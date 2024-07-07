@@ -1,4 +1,4 @@
-# jonashaslbeck@protonmail.com; June 15th, 2023
+# jonashaslbeck@protonmail.com; July 17th, 2023
 
 # --------------------------------------------------------
 # ------- What is happening here? ------------------------
@@ -13,13 +13,16 @@
 # library(devtools)
 # install_github("jmbh/mnet")
 library(mnet)
-
 library(readr)
 library(plyr)
-
 library(mlVAR)
-
 library(qgraph)
+
+# --------------------------------------------------------
+# ------- Look at Data ----------------------------------
+# --------------------------------------------------------
+
+head(dataKoval13)
 
 # --------------------------------------------------------
 # ------- Code -------------------------------------------
@@ -43,7 +46,6 @@ output <- mlVAR_GC(data = dataKoval13,
                    pbar = TRUE)
 
 # Save
-
 l_outlist$GC <- output
 
 # --- Run Individual Models ---
@@ -104,7 +106,7 @@ titles <- c("CESD Low (<= 16)", "CESD High (> 16)",
 
 pdf("Figures/Fig_Tutorial_Kovel2013.pdf", width = 7, height = 7)
 par(mfrow=c(2,2))
-for(i in 1:4) qgraph(l_nets[[i]],
+for(i in 1:4) qgraph(t(l_nets[[i]]), # needs transpose, because qgraph plots X[2,1] as 2->1
                      layout = "circle",
                      edge.labels = TRUE,
                      title = titles[i],
