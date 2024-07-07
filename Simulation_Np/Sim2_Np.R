@@ -1,4 +1,4 @@
-# jonashaslbeck@protonmail.com; June 15th, 2023
+# jonashaslbeck@protonmail.com; July 7th, 2024
 
 # --------------------------------------------------------------
 # ---------- Get Iteration Number ------------------------------
@@ -15,7 +15,7 @@ iter <- as.numeric(iter)
 
 # Panic Model Sim
 library(mlVAR)
-library(mixnet)
+library(mnet)
 
 # Parallelization
 library(foreach)
